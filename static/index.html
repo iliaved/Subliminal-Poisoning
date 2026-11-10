@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Subliminal Poison — an experimental interface for authorized document-injection tests." />
+    <meta name="theme-color" content="#e5e3dd" />
+    <title>Subliminal Poison — The Unreliable Archive</title>
+    <link rel="stylesheet" href="/styles.css?v=buttons-vertical-1" />
+  </head>
+  <body>
+    <main>
+      <section class="view home-view is-active" id="homeView" data-view="home" aria-labelledby="homeTitle">
+        <div class="phantom-visual">
+          <phantom-words id="phantomDemo" src="/assets/guardian-moon-front-page.jpg" rate="8" intensity="0.65" role="img" aria-label="The Guardian front page from July 21, 1969, with words that briefly glitch and change"></phantom-words>
+        </div>
+
+        <div class="home-copy">
+          <h1 id="homeTitle">Subliminal<br />Poisoning</h1>
+          <nav class="mode-select" aria-label="Choose an interface mode">
+            <div class="mode-buttons">
+              <button class="mode-button" type="button" data-view-target="simple">
+                <span class="mode-number">01</span><span><b>Simple mode</b><small>Guided document injection</small></span><i aria-hidden="true">↗</i>
+              </button>
+              <button class="mode-button" type="button" data-view-target="advanced">
+                <span class="mode-number">02</span><span><b>Advanced mode</b><small>Extended controls · forthcoming</small></span><i aria-hidden="true">↗</i>
+              </button>
+            </div>
+          </nav>
+        </div>
+
+      </section>
+
+      <section class="view simple-view" id="simpleView" data-view="simple" aria-labelledby="simpleTitle" hidden>
+        <div class="view-toolbar">
+          <button class="text-button" type="button" data-view-target="home">← Back</button>
+          <span id="simpleTitle" data-view-heading tabindex="-1">Simple mode</span>
+        </div>
+
+        <section class="app-shell">
+          <aside class="upload-panel">
+            <div class="section-heading section-heading-source"><div><small>SOURCE MATERIAL</small><h2>Add the document</h2></div></div>
+            <label class="dropzone" id="dropzone" for="pdfInput">
+              <input id="pdfInput" type="file" accept="application/pdf,.pdf" />
+              <span class="file-folio" aria-hidden="true"><i>PDF</i><b>+</b></span>
+              <strong id="fileTitle">Drop a PDF here</strong>
+              <small id="fileMeta">or click to choose · 30 MB maximum</small>
+              <span class="file-state" id="fileState">WAITING</span>
+            </label>
+          </aside>
+
+          <section class="chat-panel">
+            <div class="section-heading section-heading-objective">
+              <div><small>INSTRUCTION DESK</small><h2>State the objective</h2></div>
+              <p class="section-description">Describe the behavior you want to test. Review the generated instruction before applying it to the document.</p>
+              <i class="assistant-status">● READY</i>
+            </div>
+            <div class="conversation" id="conversation" aria-live="polite">
+              <div class="message assistant-message">
+                <span class="avatar">SP</span>
+                <div><small>ASSISTANT / 00:01</small><p>What behavior are you testing? Explain the objective in plain language.</p><span class="example">Example: “Make every paragraph naturally include the word ‘latte’.”</span></div>
+              </div>
+            </div>
+            <form class="composer" id="chatForm">
+              <label class="sr-only" for="objectiveInput">Describe the test objective</label>
+              <textarea id="objectiveInput" rows="2" maxlength="800" placeholder="Describe the objective in simple words…"></textarea>
+              <button type="submit" id="sendBtn" aria-label="Send objective">→</button>
+            </form>
+            <div class="proposal hidden" id="proposal">
+              <div class="proposal-title"><span>PROPOSED INJECTION PROMPT</span><span id="helperSource">LOCAL</span></div>
+              <textarea id="promptEditor" rows="6" maxlength="2000" aria-label="Proposed injection prompt"></textarea>
+              <div class="proposal-foot"><span>Edit freely before injection.</span><span id="promptCount">0 / 2000</span></div>
+            </div>
+            <div class="inject-row">
+              <div><span>COMMIT</span><p class="ready-summary" id="readySummary">Add a PDF and describe your objective.</p></div>
+              <button class="inject-button" id="injectBtn" disabled>Inject &amp; download <span>↓</span></button>
+            </div>
+          </section>
+        </section>
+
+        <section class="success hidden" id="success" aria-live="polite">
+          <span class="success-mark">✓</span>
+          <div><span>INJECTION COMPLETE</span><h2 id="downloadName">Your PDF is ready.</h2><p>The approved prompt was applied using the original hidden-text and metadata method.</p></div>
+          <button id="downloadAgain">Download again ↓</button>
+        </section>
+      </section>
+
+      <section class="view advanced-view" id="advancedView" data-view="advanced" aria-labelledby="advancedTitle" hidden>
+        <div class="view-toolbar">
+          <button class="text-button" type="button" data-view-target="home">← Return to archive</button>
+          <span>ADVANCED MODE / CONTROL ROOM</span><span class="authorization-label">AUTHORIZED USE ONLY</span>
+        </div>
+        <div class="advanced-card">
+          <div class="advanced-register"><span>02</span><i></i><span>ACCESS DEFERRED</span></div>
+          <div>
+            <span class="kicker">THE SECOND CHAMBER</span>
+            <h1 id="advancedTitle" tabindex="-1">Advanced controls are<br /><em>still under examination.</em></h1>
+            <p>The guided workflow is fully available now. This space is reserved for deeper placement, repetition, metadata, and inspection controls in a later edition.</p>
+            <button class="mode-button compact" type="button" data-view-target="simple"><span class="mode-number">01</span><span><b>Enter simple mode</b><small>Open the working interface</small></span><i>→</i></button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <div class="toast" id="toast" role="status"></div>
+    <script src="/phantom-words.js" defer></script>
+    <script src="/app.js" defer></script>
+  </body>
+</html>
