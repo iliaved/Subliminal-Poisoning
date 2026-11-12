@@ -6,7 +6,7 @@
     <meta name="description" content="Subliminal Poison — an experimental interface for authorized document-injection tests." />
     <meta name="theme-color" content="#e5e3dd" />
     <title>Subliminal Poison — The Unreliable Archive</title>
-    <link rel="stylesheet" href="/styles.css?v=buttons-vertical-1" />
+    <link rel="stylesheet" href="/styles.css?v=sanitizer-progress-1" />
   </head>
   <body>
     <main>
@@ -24,6 +24,9 @@
               </button>
               <button class="mode-button" type="button" data-view-target="advanced">
                 <span class="mode-number">02</span><span><b>Advanced mode</b><small>Extended controls · forthcoming</small></span><i aria-hidden="true">↗</i>
+              </button>
+              <button class="mode-button" type="button" data-view-target="sanitize">
+                <span class="mode-number">03</span><span><b>Sanitizing method</b><small>Rebuild a PDF from visible text</small></span><i aria-hidden="true">↗</i>
               </button>
             </div>
           </nav>
@@ -85,6 +88,52 @@
         </section>
       </section>
 
+      <section class="view sanitize-view" id="sanitizeView" data-view="sanitize" aria-labelledby="sanitizeTitle" hidden>
+        <div class="view-toolbar">
+          <button class="text-button" type="button" data-view-target="home">← Back</button>
+          <span>OCR DEFENSE / SANITIZING METHOD</span><span class="authorization-label">LOCAL PROCESSING</span>
+        </div>
+
+        <section class="sanitize-shell">
+          <div class="sanitize-copy">
+            <span class="kicker">DEFENSIVE RECONSTRUCTION</span>
+            <h1 id="sanitizeTitle" tabindex="-1">Keep what can<br /><em>actually be seen.</em></h1>
+            <p>The sanitizer rasterizes each page, removes low-contrast marks, reads the visible text with OCR, and builds a fresh text-only PDF. Hidden layers, metadata, forms, attachments, and scripts are not copied.</p>
+            <ol class="sanitize-steps">
+              <li><span>01</span><div><b>Render</b><small>Convert each source page to pixels.</small></div></li>
+              <li><span>02</span><div><b>Filter</b><small>Drop low-contrast and tiny text.</small></div></li>
+              <li><span>03</span><div><b>Rebuild</b><small>OCR visible text into a clean PDF.</small></div></li>
+            </ol>
+          </div>
+
+          <div class="sanitize-workspace">
+            <div class="section-heading section-heading-source"><div><small>UNTRUSTED SOURCE</small><h2>Add the PDF to sanitize</h2></div></div>
+            <label class="dropzone sanitize-dropzone" id="sanitizeDropzone" for="sanitizePdfInput">
+              <input id="sanitizePdfInput" type="file" accept="application/pdf,.pdf" />
+              <span class="file-folio" aria-hidden="true"><i>PDF</i><b>+</b></span>
+              <strong id="sanitizeFileTitle">Drop a PDF here</strong>
+              <small id="sanitizeFileMeta">or click to choose · 30 MB maximum</small>
+              <span class="file-state" id="sanitizeFileState">WAITING</span>
+            </label>
+            <div class="sanitize-progress hidden" id="sanitizeProgress" role="progressbar" aria-label="Sanitization progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+              <div class="sanitize-progress-heading"><span id="sanitizeProgressLabel">Preparing document…</span><strong id="sanitizeProgressValue">0%</strong></div>
+              <div class="sanitize-progress-track" aria-hidden="true"><span id="sanitizeProgressFill"></span></div>
+              <small id="sanitizeProgressPage">Waiting to begin</small>
+            </div>
+            <div class="sanitize-actions">
+              <p id="sanitizeStatus">Suspicious visible instructions will be redacted automatically.</p>
+              <button class="inject-button" id="sanitizeBtn" type="button" disabled>Sanitize &amp; download <span>↓</span></button>
+            </div>
+          </div>
+        </section>
+
+        <section class="success hidden" id="sanitizeSuccess" aria-live="polite">
+          <span class="success-mark">✓</span>
+          <div><span>SANITIZATION COMPLETE</span><h2 id="sanitizeDownloadName">Your rebuilt PDF is ready.</h2><p id="sanitizeSummary">Only OCR-reconstructed text was retained.</p></div>
+          <button id="sanitizeDownloadAgain" type="button">Download again ↓</button>
+        </section>
+      </section>
+
       <section class="view advanced-view" id="advancedView" data-view="advanced" aria-labelledby="advancedTitle" hidden>
         <div class="view-toolbar">
           <button class="text-button" type="button" data-view-target="home">← Return to archive</button>
@@ -104,6 +153,6 @@
 
     <div class="toast" id="toast" role="status"></div>
     <script src="/phantom-words.js" defer></script>
-    <script src="/app.js" defer></script>
+    <script src="/app.js?v=sanitizer-progress-1" defer></script>
   </body>
 </html>

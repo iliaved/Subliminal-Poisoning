@@ -3,6 +3,9 @@ const state = {
   prompt: "",
   artifact: null,
   artifactName: "",
+  sanitizeFile: null,
+  sanitizedArtifact: null,
+  sanitizedArtifactName: "",
   activeView: "home",
 };
 
@@ -85,6 +88,43 @@ function acceptFile(file) {
   updateReadyState();
 }
 
+function updateSanitizeState() {
+  $("#sanitizeBtn").disabled = !state.sanitizeFile;
+}
+
+function setSanitizeProgress(percent, message, processed = 0, total = 0) {
+  const value = Math.max(0, Math.min(100, Number(percent) || 0));
+  const progress = $("#sanitizeProgress");
+  progress.classList.remove("hidden", "error");
+  progress.setAttribute("aria-valuenow", String(value));
+  $("#sanitizeProgressFill").style.width = `${value}%`;
+  $("#sanitizeProgressValue").textContent = `${value}%`;
+  $("#sanitizeProgressLabel").textContent = message || "Processing document…";
+  $("#sanitizeProgressPage").textContent = total
+    ? `${processed} of ${total} pages processed`
+    : "Inspecting document";
+}
+
+const wait = (milliseconds) => new Promise((resolve) => window.setTimeout(resolve, milliseconds));
+
+function acceptSanitizeFile(file) {
+  if (!file) return;
+  if (!file.name.toLowerCase().endsWith(".pdf")) return toast("Choose a PDF file.", true);
+  if (file.size > 30 * 1024 * 1024) return toast("The PDF must be 30 MB or smaller.", true);
+  state.sanitizeFile = file;
+  $("#sanitizeDropzone").classList.add("has-file");
+  $("#sanitizeFileTitle").textContent = file.name;
+  $("#sanitizeFileMeta").textContent = `${(file.size / 1024 / 1024).toFixed(2)} MB · ready`;
+  $("#sanitizeFileState").textContent = "ADDED";
+  $("#sanitizeStatus").textContent = "Ready to rasterize, OCR, redact, and rebuild this document.";
+  $("#sanitizeProgress").classList.add("hidden");
+  $("#sanitizeProgressFill").style.width = "0%";
+  $("#sanitizeSuccess").classList.add("hidden");
+  state.sanitizedArtifact = null;
+  state.sanitizedArtifactName = "";
+  updateSanitizeState();
+}
+
 async function suggestPrompt(event) {
   event.preventDefault();
   const input = $("#objectiveInput");
@@ -143,6 +183,18 @@ function downloadArtifact() {
   setTimeout(() => URL.revokeObjectURL(url), 1200);
 }
 
+function downloadSanitizedArtifact() {
+  if (!state.sanitizedArtifact) return;
+  const url = URL.createObjectURL(state.sanitizedArtifact);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = state.sanitizedArtifactName;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1200);
+}
+
 async function inject() {
   updateReadyState();
   if ($("#injectBtn").disabled) return;
@@ -172,11 +224,66 @@ async function inject() {
   }
 }
 
+async function sanitizeDocument() {
+  updateSanitizeState();
+  if ($("#sanitizeBtn").disabled) return;
+  const button = $("#sanitizeBtn");
+  const original = button.innerHTML;
+  button.disabled = true;
+  button.textContent = "Sanitizing…";
+  $("#sanitizeStatus").textContent = "Rendering and OCR can take several minutes for a long PDF.";
+  setSanitizeProgress(2, "Uploading document…");
+
+  const body = new FormData();
+  body.append("file", state.sanitizeFile);
+  try {
+    const startResponse = await fetch("/api/sanitize/jobs", { method: "POST", body });
+    if (!startResponse.ok) throw new Error(await responseError(startResponse));
+    const { job_id: jobId } = await startResponse.json();
+    let status;
+    while (true) {
+      const statusResponse = await fetch(`/api/sanitize/jobs/${jobId}`);
+      if (!statusResponse.ok) throw new Error(await responseError(statusResponse));
+      status = await statusResponse.json();
+      setSanitizeProgress(status.progress, status.message, status.processed_pages, status.total_pages);
+      if (status.status === "failed") throw new Error(status.message || "Sanitization did not complete.");
+      if (status.status === "ready") break;
+      await wait(400);
+    }
+
+    const response = await fetch(`/api/sanitize/jobs/${jobId}/download`);
+    if (!response.ok) throw new Error(await responseError(response));
+    state.sanitizedArtifact = await response.blob();
+    state.sanitizedArtifactName = filenameFrom(response).replace("injected.pdf", "sanitized.pdf");
+    const flagged = Number(response.headers.get("x-sanitizer-flagged-pages") || 0);
+    const redacted = Number(response.headers.get("x-sanitizer-redacted-paragraphs") || 0);
+    const words = Number(response.headers.get("x-sanitizer-words-kept") || 0);
+    $("#sanitizeDownloadName").textContent = state.sanitizedArtifactName;
+    $("#sanitizeSummary").textContent = `${words.toLocaleString()} visible words retained · ${flagged} pages flagged · ${redacted} suspicious paragraphs redacted.`;
+    $("#sanitizeSuccess").classList.remove("hidden");
+    $("#sanitizeStatus").textContent = "Sanitization complete. The source file and temporary data were removed.";
+    setSanitizeProgress(100, "Sanitization complete", status.total_pages, status.total_pages);
+    downloadSanitizedArtifact();
+    $("#sanitizeSuccess").scrollIntoView({ behavior: "smooth", block: "center" });
+  } catch (error) {
+    $("#sanitizeStatus").textContent = "Sanitization did not complete.";
+    $("#sanitizeProgress").classList.add("error");
+    $("#sanitizeProgressLabel").textContent = "Sanitization stopped";
+    toast(error.message, true);
+  } finally {
+    button.innerHTML = original;
+    updateSanitizeState();
+  }
+}
+
 $("#chatForm").addEventListener("submit", suggestPrompt);
 $("#injectBtn").addEventListener("click", inject);
 $("#downloadAgain").addEventListener("click", downloadArtifact);
+$("#sanitizeBtn").addEventListener("click", sanitizeDocument);
+$("#sanitizeDownloadAgain").addEventListener("click", downloadSanitizedArtifact);
 $("#promptEditor").addEventListener("input", () => { updatePromptCount(); updateReadyState(); });
 $("#pdfInput").addEventListener("change", (event) => acceptFile(event.target.files[0]));
+$("#sanitizePdfInput").addEventListener("change", (event) => acceptSanitizeFile(event.target.files[0]));
 
 const dropzone = $("#dropzone");
 ["dragenter", "dragover"].forEach((name) => dropzone.addEventListener(name, (event) => {
@@ -189,6 +296,17 @@ const dropzone = $("#dropzone");
 }));
 dropzone.addEventListener("drop", (event) => acceptFile(event.dataTransfer.files[0]));
 
+const sanitizeDropzone = $("#sanitizeDropzone");
+["dragenter", "dragover"].forEach((name) => sanitizeDropzone.addEventListener(name, (event) => {
+  event.preventDefault();
+  sanitizeDropzone.classList.add("dragging");
+}));
+["dragleave", "drop"].forEach((name) => sanitizeDropzone.addEventListener(name, (event) => {
+  event.preventDefault();
+  sanitizeDropzone.classList.remove("dragging");
+}));
+sanitizeDropzone.addEventListener("drop", (event) => acceptSanitizeFile(event.dataTransfer.files[0]));
 
 updateReadyState();
+updateSanitizeState();
 switchView(location.hash.slice(1) || "home", false);
