@@ -163,7 +163,3 @@ liability for its use or misuse.
 This is a security-research tool for **authorized testing only**. You are
 responsible for obtaining explicit permission. Using it to manipulate
 documents or systems you do not own or control may be illegal.
-
-The newspaper image in `static/assets/` is third-party content included only as
-a UI demo and is not covered by the MIT license. Replace it before public
-redistribution unless you hold the necessary rights.
